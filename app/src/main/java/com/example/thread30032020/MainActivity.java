@@ -10,6 +10,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity {
 
     int a , b , c;
+    MyFlag myFlag = new MyFlag(0);
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,30 +41,72 @@ public class MainActivity extends AppCompatActivity {
         Thread threadA = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i <= 10 ; i++) {
-                    a = i;
-                    Log.d("BBB","A : "+ i);
+                synchronized (myFlag){
+                    for (int i = 0; i <= 10 ; ) {
+                        if (myFlag.index == 0){
+                            a = i;
+                            Log.d("BBB","A : "+ i++);
+                            myFlag.index = 1;
+                            myFlag.notifyAll();
+                        }else{
+                            try {
+                                myFlag.wait();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                    }
                 }
             }
         });
         Thread threadB = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i <= 10 ; i++) {
-                    b = i;
-                    Log.d("BBB","B : "+ i);
+                synchronized (myFlag){
+                    for (int i = 0; i <= 10 ;) {
+                        if (myFlag.index == 1){
+                            b = i;
+                            Log.d("BBB","B : "+ i++);
+                            myFlag.index = 2;
+                            myFlag.notifyAll();
+                        }else{
+                            try {
+                                myFlag.wait();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
             }
         });
         Thread threadC = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i <= 10 ; i++) {
-                    c = a + b;
-                    Log.d("BBB","C : "+ c);
+                synchronized (myFlag){
+                    for (int i = 0; i <= 10 ;) {
+                        if (myFlag.index == 2){
+                            c = a + b;
+                            Log.d("BBB","C : "+ c);
+                            myFlag.index = 0;
+                            i++;
+                            myFlag.notifyAll();
+                        }else{
+                            try {
+                                myFlag.wait();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
             }
         });
+
+        threadC.start();
+        threadA.start();
+        threadB.start();
     }
 
     // Xu ly dong bo
